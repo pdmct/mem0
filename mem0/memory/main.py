@@ -33,6 +33,33 @@ from mem0.memory.utils import (
 )
 from mem0.utils.factory import EmbedderFactory, LlmFactory, VectorStoreFactory
 
+def extract_json_from_string(text):
+    """
+    Extract JSON content from a string by removing text before the first '{' 
+    and after the last '}' bracket.
+    
+    Args:
+        text (str): String containing JSON with potential extra text
+        
+    Returns:
+        str: Cleaned JSON string, or empty string if no valid JSON brackets found
+    """
+    if not text:
+        return ""
+    
+    # Find first opening bracket
+    first_bracket = text.find('{')
+    if first_bracket == -1:
+        return ""
+    
+    # Find last closing bracket
+    last_bracket = text.rfind('}')
+    if last_bracket == -1 or last_bracket < first_bracket:
+        return ""
+    
+    # Extract content between brackets (inclusive)
+    return text[first_bracket:last_bracket + 1]
+
 
 def _build_filters_and_metadata(
     *,  # Enforce keyword-only arguments
@@ -335,7 +362,7 @@ class Memory(MemoryBase):
         )
 
         try:
-            response = remove_code_blocks(response)
+            response = remove_code_blocks(extract_json_from_string(response))
             new_retrieved_facts = json.loads(response)["facts"]
         except Exception as e:
             logger.error(f"Error in new_retrieved_facts: {e}")
